@@ -96,7 +96,7 @@ outputs:
 source: @local::hdf5rawinput3
 
 # Alter the .csv file for the IFBeam SPS spill data
-physics.filters.filterspillon.sps_beamdata: "./srcs/pdhdbsmdata/pdhdbsmdata/SPSIFBeam_Run29424_Run29425_Oct4_6.csv"
+physics.filters.filterspillon.sps_beamdata: "./srcs/pdhdbsmdata/sps_data/SPSIFBeam_Run29424_Run29425_Oct4_6.csv"
 
 physics.producers.tpcrawdecoder.DecoderToolParams: @local::PDHDDataInterfaceWIBEth3Defaults
 physics.producers.pdhddaphne.DAPHNEInterface: { tool_type: "DAPHNEInterface2" }
