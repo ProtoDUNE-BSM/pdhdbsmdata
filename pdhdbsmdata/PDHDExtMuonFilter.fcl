@@ -1,0 +1,9 @@
+BEGIN_PROLOG
+
+pdhdextmuonfilter: {
+  module_type: "PDHDExtMuonFilter"
+  InputTagTP: "triggerrawdecoder:daq"
+  InputTagTA: "triggerrawdecoder:daq"
+}
+
+END_PROLOG

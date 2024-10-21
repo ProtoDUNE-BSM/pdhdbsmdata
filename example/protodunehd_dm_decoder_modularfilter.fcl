@@ -1,0 +1,102 @@
+#include "HDF5RawInput3.fcl"
+#include "PDHDTPCReader.fcl"
+#include "PDHDDataInterfaceWIBEth3.fcl"
+#include "PDHDTriggerReader3.fcl"
+#include "PDHDTimingRawDecoder.fcl"
+#include "DAPHNEReaderPDHD.fcl"
+#include "services_dune.fcl"
+#include "PDHDSPSSpillFilter.fcl"
+#include "PDHDTriggerTypeFilter.fcl"
+#include "PDHDExtMuonFilter.fcl"
+process_name: bsmtriggerdecoder
+
+services:
+{
+  # Load the service that manages root files for histograms.
+  TimeTracker:       @local::dune_time_tracker
+  MemoryTracker:     @local::dune_memory_tracker
+  RandomNumberGenerator: {} #ART native random number generator
+  message:              @local::dune_message_services_prod
+  FileCatalogMetadata:  @local::art_file_catalog_data
+  ChannelStatusService: @local::dunefd_channel_status
+  ExptGeoHelperInterface:       @local::dune_geometry_helper
+  GeometryConfigurationWriter:  {}
+  Geometry:                     @local::protodunehdv6_geo
+  DetectorClocksService:        @local::protodunehd_detectorclocks
+  DetectorPropertiesService:    @local::protodunehd_detproperties
+  LArPropertiesService:         @local::dunefd_properties
+  LArFFT:                       @local::dunefd_larfft
+  DatabaseUtil:                 @local::dunefd_database
+  IFDH:                         {}
+
+  TFileService: 
+  {
+    fileName: "pdhd_keepup_decoder.root"
+  } 
+  HDF5RawFile3Service:  {}
+
+  DAPHNEChannelMapService: {
+    FileName: "DAPHNE_test5_ChannelMap_v1.txt"
+  }
+
+  PD2HDChannelMapService: 
+  {
+    FileName: "PD2HDChannelMap_WIBEth_electronics_v1.txt"
+  }
+}
+
+
+physics:
+{
+  producers:
+  {
+    # Raw decoding
+    tpcrawdecoder: @local::PDHDTPCReaderDefaults
+    triggerrawdecoder: @local::PDHDTriggerReader3Defaults 
+    timingrawdecoder: @local::PDHDTimingRawDecoder
+    pdhddaphne: @local::DAPHNEReaderPDHD
+  }
+
+  filters:
+  {
+    filterspillon: @local::pdhdfilter_spillon
+    triggertypefilter: @local::pdhdtriggertypefilter
+    extmuonfilter: @local::pdhdextmuonfilter
+  }
+
+  produce: [
+    filterspillon,
+    triggerrawdecoder,
+    triggertypefilter,
+    tpcrawdecoder,
+    timingrawdecoder,
+    extmuonfilter
+    # Don't run pdhddaphne in this version of dunesw as there is an issue
+  ]
+
+  output: [ out1 ]
+  trigger_paths : [ produce ]
+  end_paths: [ output ]
+}
+
+outputs:
+{
+  out1:
+  {
+    outputCommands: [ "keep *"]
+    compressionLevel: 1
+    module_type: RootOutput
+    fileName: "%ifb_%tc_bsmtrig_spillon.root"
+    dataTier:    "full-reconstructed"
+    streamName: "out1"
+    SelectEvents: [ "produce" ] 
+  }
+  
+}
+source: @local::hdf5rawinput3
+
+# Alter the .csv file for the IFBeam SPS spill data
+physics.filters.filterspillon.sps_beamdata: "./srcs/pdhdbsmdata/pdhdbsmdata/SPSIFBeam_Run29424_Run29425_Oct4_6.csv"
+
+physics.producers.tpcrawdecoder.DecoderToolParams: @local::PDHDDataInterfaceWIBEth3Defaults
+physics.producers.pdhddaphne.DAPHNEInterface: { tool_type: "DAPHNEInterface2" }

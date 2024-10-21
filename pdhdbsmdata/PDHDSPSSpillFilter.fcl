@@ -1,0 +1,13 @@
+BEGIN_PROLOG
+
+pdhdfilter_spillon: {
+  module_type: "PDHDSPSSpillFilter"
+  spill_on: true
+  InputTag: "triggerrawdecoder:daq"
+  sps_beamdata: "./srcs/pdhdbsmdata/pdhdbsmdata/SPSIFBeam_Run29424_Run29425_Oct4_6.csv"
+}
+
+pdhdfilter_spilloff: @local::pdhdfilter_spillon
+pdhdfilter_spilloff.spill_on: false
+
+END_PROLOG
