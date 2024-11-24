@@ -1,0 +1,80 @@
+#include "wirecell_dune.fcl"
+#include "PDHDFEMBFilter.fcl"
+#include "services_dune.fcl"
+
+process_name: bsmsignalprocess 
+
+services:
+{
+  # Load the service that manages root files for histograms.
+  TimeTracker:       @local::dune_time_tracker
+  MemoryTracker:     @local::dune_memory_tracker
+  RandomNumberGenerator: {} #ART native random number generator
+  message:              @local::dune_message_services_prod
+  FileCatalogMetadata:  @local::art_file_catalog_data
+  ChannelStatusService: @local::dunefd_channel_status
+  ExptGeoHelperInterface:       @local::dune_geometry_helper
+  GeometryConfigurationWriter:  {}
+  Geometry:                     @local::protodunehdv6_geo
+  DetectorClocksService:        @local::protodunehd_detectorclocks
+  DetectorPropertiesService:    @local::protodunehd_detproperties
+  LArPropertiesService:         @local::dunefd_properties
+  LArFFT:                       @local::dunefd_larfft
+  DatabaseUtil:                 @local::dunefd_database
+
+  IFDH: {}
+
+  TFileService: 
+  {
+    fileName: "pdhd_wirecell.root"
+  }
+
+  PD2HDChannelMapService:
+  {
+    FileName: "PD2HDChannelMap_WIBEth_electronics_v1.txt"
+  }
+}
+
+physics:
+{
+
+  filters: {
+    fembfilter: @local::pdhdfembfilter
+  }
+
+  producers:
+  {
+    # Signal Processing (data prep)
+    wclsdatahd:         @local::protodunehd_nfsp
+  }
+
+  produce: [
+    fembfilter,
+    wclsdatahd
+  ]
+
+  output: [ out1 ]
+  trigger_paths : [ produce ]
+  end_paths: [ output ]
+}
+
+outputs:
+{
+  out1:
+  {
+    # Drop raw digits as they make the file sizes very large
+    outputCommands: [ "keep *", "drop raw::RawDigit*_*_*_*"]
+    compressionLevel: 1
+    module_type: RootOutput
+    fileName: "%ifb_%tc_sigproc.root"
+    dataTier:    "full-reconstructed"
+    streamName: "out1"
+  }
+}
+
+source:
+{
+  module_type: RootInput
+  maxEvents: -1
+  saveMemoryObjectThreshold: 0
+}

@@ -1,7 +1,7 @@
 BEGIN_PROLOG
 
-pdhdextmuonfilter: {
-  module_type: "PDHDExtMuonFilter"
+pdhdvertexfilter: {
+  module_type: "PDHDVertexFilter"
   InputTagTP: "triggerrawdecoder:daq"
   InputTagTA: "triggerrawdecoder:daq"
   fUpstreamVetoChannels: 40

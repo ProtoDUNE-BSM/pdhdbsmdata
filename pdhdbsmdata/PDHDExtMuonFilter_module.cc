@@ -63,7 +63,7 @@ class PDHDExtMuonFilter : public art::EDFilter {
 
     std::string fInputLabelTA;
     std::string fInputLabelTP;
-    std::string fRawDigitLabel;
+    channel_t fUpstreamVetoChannels;
     // Name and path of input csv file for SPS beam data
     std::vector<triggerprimitive_t> fTriggerPrimitive;
 };
@@ -72,13 +72,14 @@ class PDHDExtMuonFilter : public art::EDFilter {
 PDHDExtMuonFilter::PDHDExtMuonFilter::PDHDExtMuonFilter(fhicl::ParameterSet const & pset):
   EDFilter(pset), 
   fInputLabelTA(pset.get<std::string>("InputTagTA")),
-  fInputLabelTP(pset.get<std::string>("InputTagTP")) {
+  fInputLabelTP(pset.get<std::string>("InputTagTP")),
+  fUpstreamVetoChannels(pset.get<channel_t>("fUpstreamVetoChannels")) {
   
     fAPA_id = 0;
     pCollectionAPA1IDs = std::make_pair(2080, 2559);
     pCollectionAPA2IDs = std::make_pair(7200, 7680);  
     pCollectionAPA3IDs = std::make_pair(4160, 4639);
-    pCollectionAPA4IDs = std::make_pair(9280, 9759);  
+    pCollectionAPA4IDs = std::make_pair(9280, 9759); 
   
     consumes<std::vector<triggerprimitive_t>>(fInputLabelTP);
     consumes<std::vector<triggerprimitive_t>>(fInputLabelTA);
@@ -173,7 +174,6 @@ bool PDHDExtMuonFilter::filter(art::Event & evt) {
       std::cout << " Not in any of the main TPCs, removing." << std::endl;
       return false;
     }
-    std::cout << "IS IN APA 3 OR 4" << std::endl;
 
     uint32_t adc_integral_sum(0);
     uint32_t tp_mult_sum(0);
@@ -217,7 +217,6 @@ bool PDHDExtMuonFilter::filter(art::Event & evt) {
       if (fTPs.at(tp)->channel <= th_chan) {
         timestamp_t norm_time = fTPs.at(tp)->time_peak - first_tick;
         fTPTimeStampsToThresh.push_back(norm_time);
-        //fTPTimeStampsToThresh.push_back(fTPs.at(tp)->time_peak);
       }
     }
     // Calculate average timestamp up to threshold
@@ -231,7 +230,7 @@ bool PDHDExtMuonFilter::filter(art::Event & evt) {
 
     std::cout << "time sum = " << sum_time << "; average time = " << average_timestamps << std::endl;
 
-    double shower_stddev = 4000.;
+    double shower_stddev = 5000.;
     
     timestamp_t shower_centre = static_cast<timestamp_t>(first_tick + average_timestamps);
     timestamp_t shower_upper_bound = static_cast<timestamp_t>(first_tick + average_timestamps + shower_stddev);
@@ -275,7 +274,9 @@ bool PDHDExtMuonFilter::filter(art::Event & evt) {
   int number_hits_window(0);
 
   channel_t start_chan = pCollectionAPA3IDs.first;
-  channel_t end_chan = pCollectionAPA3IDs.first + 50;
+  // Look at first 40 channels
+  channel_t end_chan = pCollectionAPA3IDs.first + fUpstreamVetoChannels;
+  channel_t veto_threshold = 0.9 * fUpstreamVetoChannels;
 
   for (size_t tp_it = 0; tp_it < fAPA3TPsInShowerWindow.size(); tp_it++){
     if (fAPA3TPsInShowerWindow.at(tp_it).channel >= start_chan && fAPA3TPsInShowerWindow.at(tp_it).channel <= end_chan) {
@@ -284,12 +285,12 @@ bool PDHDExtMuonFilter::filter(art::Event & evt) {
   }
 
   bool filter_pass(true);
-  // Fail filter if more than 40 channels in the first 50 on APA 3 collection plane have TP hits
-  if (number_hits_window > 40) {
-    std::cout << "There are " << number_hits_window << " hits in first 50 APA 3 collection plane channels so remove." << std::endl;
+  // Fail filter if more than 90% of channels in the first fUpstreamVetoChannels on APA 3 collection plane have TP hits
+  if (number_hits_window >= static_cast<int>(veto_threshold)) {
+    std::cout << "There are " << number_hits_window << " hits in first " << fUpstreamVetoChannels << " APA 3 collection plane channels so remove." << std::endl;
     filter_pass = false;
   } else {
-    std::cout << "There are " << number_hits_window << " hits in first 50 APA 3 collection plane. No external muon so pass filter!" << std::endl;
+    std::cout << "There are " << number_hits_window << " hits in first " << fUpstreamVetoChannels <<  " collection plane. No external muon so pass filter!" << std::endl;
   }
 
   std::cout << "END PDHDExtMuonFilter for Event " << fEventID << " in Run " << fRun << std::endl << std::endl;

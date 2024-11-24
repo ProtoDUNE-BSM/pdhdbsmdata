@@ -8,6 +8,8 @@
 #include "PDHDSPSSpillFilter.fcl"
 #include "PDHDTriggerTypeFilter.fcl"
 #include "PDHDExtMuonFilter.fcl"
+#include "PDHDVertexFilter.fcl"
+
 process_name: bsmtriggerdecoder
 
 services:
@@ -62,6 +64,7 @@ physics:
     filterspillon: @local::pdhdfilter_spillon
     triggertypefilter: @local::pdhdtriggertypefilter
     extmuonfilter: @local::pdhdextmuonfilter
+    vertexfilter: @local::pdhdvertexfilter
   }
 
   produce: [
@@ -70,7 +73,8 @@ physics:
     triggertypefilter,
     tpcrawdecoder,
     timingrawdecoder,
-    extmuonfilter
+    #extmuonfilter,
+    vertexfilter
     # Don't run pdhddaphne in this version of dunesw as there is an issue
   ]
 
@@ -97,6 +101,7 @@ source: @local::hdf5rawinput3
 
 # Alter the .csv file for the IFBeam SPS spill data
 physics.filters.filterspillon.sps_beamdata: "./srcs/pdhdbsmdata/sps_data/SPSIFBeam_Run29424_Run29425_Oct4_6.csv"
+physics.filters.extmuonfilter.fUpstreamVetoChannels: 40
 
 physics.producers.tpcrawdecoder.DecoderToolParams: @local::PDHDDataInterfaceWIBEth3Defaults
 physics.producers.pdhddaphne.DAPHNEInterface: { tool_type: "DAPHNEInterface2" }

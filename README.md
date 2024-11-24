@@ -90,8 +90,7 @@ The LArSoft decoder takes raw hdf5 format files and generates TPC waveform and t
 There is an example of a fcl file that runs the decoder in `example/protodunehd_dm_decoder_modularfilter.fcl` which also include 3 filters. To run this use the following command:
 
 ```
-LD_PRELOAD=$XROOTD_LIB/libXrdPosixPreload.so lar -c jobs/protodunehd_dm_decoder_modularfilter.fcl root://eospublic.cern.ch:1094//eos/experiment/neutplatform/protodune/dune/hd
--protodune/75/9a/np04hd_raw_run029425_0887_dataflow0_datawriter_0_20241006T161230.hdf5
+LD_PRELOAD=$XROOTD_LIB/libXrdPosixPreload.so lar -c .src/pdhdbsmdata/example/protodunehd_dm_decoder_modularfilter.fcl root://eospublic.cern.ch:1094//eos/experiment/neutplatform/protodune/dune/hd-protodune/75/9a/np04hd_raw_run029425_0887_dataflow0_datawriter_0_20241006T161230.hdf5
 ```
 
 where an example protodune file is given.
@@ -133,4 +132,4 @@ It can be seen that the filter `filterspillon` is called first. The module is de
 
 The second filter, `triggertypefilter`, comes after trigger decoder. The module is defined in `PDHDTriggerTypeFilter_module.cc`. This uses the trigger information to determine whether the event was a ground shake type, in which case the event is removed.
 
-The third filter is still in development. It is the `extmuonfilter` that comes at the end of the process and is defined in `PDHDExtMuonFilter_module.cc`. The trigger aims to remove events where the shower which caused the trigger is aligned in drift time with a muon entering the front of the TPC. This is a major source of background and filtering a large of them out at the decoder level would be useful.
+The third filter is still in development. It is the `extmuonfilter` module that comes at the end of the process and is defined in `PDHDExtMuonFilter_module.cc`. The filter aims to remove events where the shower that caused the trigger is aligned in drift time with a muon entering the front of the TPC. This is a major source of background and filtering a large of them out at the decoder level would be useful.
