@@ -147,6 +147,7 @@ bool PDHDVertexFilter::filter(art::Event & evt) {
     timestamp_t last_tick = triggerActivityHandle->at(ta).time_end;
   
     timestamp_t TAWindow = last_tick - first_tick;
+    if (TAWindow < 20e3) TAWindow = 20e3;
 
     std::cout << ">>> TAWindow = " << TAWindow << std::endl;
     // Now sort in channel number
@@ -286,12 +287,18 @@ bool PDHDVertexFilter::filter(art::Event & evt) {
     double mean_time = r->Parameter(1);
     double sigma_time = r->Parameter(2);
     std::cout << "Time: Mean = " << mean_time << ", sigma = " << sigma_time << std::endl;
-    
-    if (sigma_time > 4000) {
-      std::cout << "Too broad in time. Remove." << std::endl;
+   
+    if (mean_time >= 0 && mean_time <= TAWindow) {
+      if (sigma_time > 4000) {
+        std::cout << "Too broad in time. Remove." << std::endl;
+        fEventPassesFilters = false;
+        continue;
+        //return false;
+      }
+    } else {
+      std::cout << "Centre of shower outside time window. Remove." << std::endl;
       fEventPassesFilters = false;
       continue;
-      //return false;
     }
 
     Int_t timeFitStatus = r;
