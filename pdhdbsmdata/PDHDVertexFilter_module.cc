@@ -56,8 +56,6 @@ class PDHDVertexFilter : public art::EDFilter {
 
     int fAPA_id;
 
-    //TTree *fFilterPerformanceTree;
-
     std::pair<channel_t, channel_t> pCollectionAPA1IDs;
     std::pair<channel_t, channel_t> pCollectionAPA2IDs;
     std::pair<channel_t, channel_t> pCollectionAPA3IDs;
@@ -85,10 +83,6 @@ class PDHDVertexFilter : public art::EDFilter {
     channel_t fUpstreamVetoChannels;
     // Name and path of input csv file for SPS beam data
     std::vector<triggerprimitive_t> fTriggerPrimitive;
-
-    //bool fShowerSpread;
-    //bool fVertexChannel;
-    //bool fExternalMuon;
 };
 
 //-------------------------------------
@@ -111,34 +105,13 @@ PDHDVertexFilter::PDHDVertexFilter::PDHDVertexFilter(fhicl::ParameterSet const &
 } 
 
 //-------------------------------------
-void PDHDVertexFilter::beginJob() {
-
-  /*
-  fFilterPerformanceTree = tfs->make<TTree>("FilterPerformanceTree", "FilterPerformanceTree");
-
-  fFilterPerformanceTree->Branch("Event", &fEventID, "Event/I");
-  fFilterPerformanceTree->Branch("SubRun", &fSubRun, "SubRun/I");
-  fFilterPerformanceTree->Branch("Run", &fRun, "Run/I");
-  fFilterPerformanceTree->Branch("ShowerSpread", &fShowerSpread, "ShowerSpread/I");
-  fFilterPerformanceTree->Branch("VertexChannel", &fVertexChannel, "VertexChannel/I");
-  fFilterPerformanceTree->Branch("ExternalMuon", &fExternalMuon, "ExternalMuon/I");
-
-  fShowerSpread = true;
-  fVertexChannel = true;
-  fExternalMuon = true;
-  */
-}
+void PDHDVertexFilter::beginJob() {}
 
 //-------------------------------------
 bool PDHDVertexFilter::filter(art::Event & evt) {
 
   art::ServiceHandle<art::TFileService> tfs;
   
-  if (!evt.isRealData()) {
-    //Filter is designed for Data only. Don't want to filter on MC
-    return true;
-  }
- 
   fRun = evt.run();
   fSubRun = evt.subRun();
   fEventID = evt.id().event();
@@ -160,7 +133,10 @@ bool PDHDVertexFilter::filter(art::Event & evt) {
   if ( ! findTPsInTAs.isValid() ) {
     std::cout << " [WARNING] TPs not found in TA." << std::endl;
   }
- 
+
+  // Boolean to return - if any one of the TAs passes the filters, pass the whole event
+  bool fEventPassesFilters(true);
+
   for (size_t ta = 0; ta < triggerActivityHandle->size(); ta++) {
     std::cout << "START TA " << ta << " out of " << triggerActivityHandle->size() << std::endl;
     auto fTPs = findTPsInTAs.at(ta);
@@ -274,7 +250,9 @@ bool PDHDVertexFilter::filter(art::Event & evt) {
 
     if (!hAPAXTAHIST || !hAPAXTimeProj) {
       std::cerr << "[ERROR] Null histogram." << std::endl;
-      return false;
+      fEventPassesFilters = false;
+      continue;
+      //return false;
     }
 
     // >>> Shower spread in time filter
@@ -311,15 +289,17 @@ bool PDHDVertexFilter::filter(art::Event & evt) {
     
     if (sigma_time > 4000) {
       std::cout << "Too broad in time. Remove." << std::endl;
-      //fShowerSpread = false;
-      //fFilterPerformanceTree->Fill();
-      return false;
+      fEventPassesFilters = false;
+      continue;
+      //return false;
     }
 
     Int_t timeFitStatus = r;
     if (timeFitStatus != 0) {
       std::cout << "[WARNING] Bad fit status " << timeFitStatus << ", so removing." << std::endl;
-      return false;
+      fEventPassesFilters = false;
+      continue;
+      //return false;
     }
     // >>> Shower spread filter end
     
@@ -408,7 +388,9 @@ bool PDHDVertexFilter::filter(art::Event & evt) {
         // If the minimum region to the left of the max region is more than half the height of the max region then remove event
         if (hAPAXChanProj->GetBinContent(first_minimum_region_bin) > 0.5*hAPAXChanProj->GetBinContent(maximum_region_bin)) {
           std::cout << "First minimum region has too many hits - shower likely entering from outside. Remove." << std::endl;
-          return false;
+          fEventPassesFilters = false;
+          continue;
+          //return false;
         }
 
         // So the minimum to the left of the max region is small enough
@@ -434,7 +416,9 @@ bool PDHDVertexFilter::filter(art::Event & evt) {
         std::cout << ">>> Vertex approx. at channel: " << vertex_chan << std::endl;
         if (vertex_chan < (pCollectionAPA3IDs.first + 40)) {
           std::cout << "Vertex likely to be within the first 40 channels of APA3 collection plane or outside the detector. Remove." << std::endl;
-          return false;
+          fEventPassesFilters = false;
+          continue;
+          //return false;
         }
       }
     }
@@ -494,18 +478,23 @@ bool PDHDVertexFilter::filter(art::Event & evt) {
       // Fail filter if more than 90% of channels in the first fUpstreamVetoChannels on APA 3 collection plane have TP hits
       if (number_hits_window >= static_cast<int>(veto_threshold)) {
         std::cout << "There are " << number_hits_window << " hits in first " << fUpstreamVetoChannels << " APA 3 collection plane channels so remove." << std::endl;
-        return false;
+        fEventPassesFilters = false;
+        continue;
+        //return false;
       } else {
         std::cout << "There are " << number_hits_window << " hits in first " << fUpstreamVetoChannels <<  " collection plane. No external muon so pass filter!" << std::endl;
       }
-
       // >>> External muon filter end
+
     }
+    // Found at least 1 TA that passed these filters, so pass the whole event on to reconstruction
+    fEventPassesFilters = true;
+    break;
   }
       
   std::cout << "END PDHDVertexFilter for Event " << fEventID << " in Run " << fRun << std::endl << std::endl;
 
-  return true;
+  return fEventPassesFilters;
 }
 
 DEFINE_ART_MODULE(PDHDVertexFilter)
