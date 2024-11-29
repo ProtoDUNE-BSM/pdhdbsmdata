@@ -19,7 +19,7 @@ And this command when on lxplus (they are the same command, just different direc
 You need to set up LArSoft, dunesw, pull the code from GitHub and create your development area. Follow this script:
 
 ```
-VERSION=v09_91_03d00
+VERSION=v10_01_03d00
 QUALS=e26:prof
 DIRECTORY=protodunedm_data_analysis
 export WORKDIR=/exp/dune/app/users/$USER/ # or on lxplus /afs/cern.ch/work/c/${USER}/public/
@@ -50,7 +50,7 @@ mrbslp
 Once the development area has been created you can set up the environment withe following script:
 
 ```
-VERSION=v09_91_03d00
+VERSION=v10_01_03d00
 QUALS=e26:prof
 
 source /cvmfs/dune.opensciencegrid.org/products/dune/setup_dune.sh
