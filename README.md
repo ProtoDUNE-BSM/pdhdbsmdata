@@ -1,4 +1,5 @@
 # LArSoftDataTools
+
 LArSoft product to handle data processing of PD-HD data from hdf5 format to reconstructed art::ROOT files.
 
 ## Apptainer Container
@@ -6,11 +7,14 @@ LArSoft product to handle data processing of PD-HD data from hdf5 format to reco
 You will need an SL7 container to run LArSoft. This can be done on gpvm and lxplus.
 
 Run the following command when on gpvm:
-```
+
+```bash
 /cvmfs/oasis.opensciencegrid.org/mis/apptainer/current/bin/apptainer shell --shell=/bin/bash -B /cvmfs,/exp,/nashome,/pnfs/dune,/opt,/run/user,/etc/hostname,/etc/hosts,/etc/krb5.conf --ipc --pid /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-dev-sl7:latest
 ```
-And this command when on lxplus (they are the same command, just different directories need to be made accessible:
-```
+
+And this command when on lxplus (they are the same command), just different directories need to be made accessible:
+
+```bash
 /cvmfs/oasis.opensciencegrid.org/mis/apptainer/current/bin/apptainer shell --shell=/bin/bash -B /cvmfs,/eos,/afs/cern.ch/work,/opt,/run/user,/etc/hostname,/etc/hosts,/etc/krb5.conf --ipc --pid /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-dev-sl7:latest
 ```
 
@@ -18,8 +22,8 @@ And this command when on lxplus (they are the same command, just different direc
 
 You need to set up LArSoft, dunesw, pull the code from GitHub and create your development area. Follow this script:
 
-```
-VERSION=v09_91_03d00
+```bash
+VERSION=v10_01_03d00
 QUALS=e26:prof
 DIRECTORY=protodunedm_data_analysis
 export WORKDIR=/exp/dune/app/users/$USER/ # or on lxplus /afs/cern.ch/work/c/${USER}/public/
@@ -49,8 +53,8 @@ mrbslp
 
 Once the development area has been created you can set up the environment withe following script:
 
-```
-VERSION=v09_91_03d00
+```bash
+VERSION=v10_01_03d00
 QUALS=e26:prof
 
 source /cvmfs/dune.opensciencegrid.org/products/dune/setup_dune.sh
@@ -65,7 +69,7 @@ mrbslp
 
 You may want to use tools such as metacat and rucio to find raw data files. To set up metacat run
 
-```
+```bash
 setup metacat
 export METACAT_AUTH_SERVER_URL=https://metacat.fnal.gov:8143/auth/dune
 export METACAT_SERVER_URL=https://metacat.fnal.gov:9443/dune_meta_prod/app
@@ -73,12 +77,13 @@ export METACAT_SERVER_URL=https://metacat.fnal.gov:9443/dune_meta_prod/app
 
 Then rucio
 
-```
+```bash
 setup rucio
 ```
 
 Not sure this is relevant outside of the FNAL machines, but if you are on gpvm you will need a grid proxy:
-```
+
+```bash
 kx509
 voms-proxy-init --noregen -rfc -voms dune:/dune/Role=Analysis
 ```
@@ -89,16 +94,17 @@ The LArSoft decoder takes raw hdf5 format files and generates TPC waveform and t
 
 There is an example of a fcl file that runs the decoder in `example/protodunehd_dm_decoder_modularfilter.fcl` which also include 3 filters. To run this use the following command:
 
-```
+```bash
 LD_PRELOAD=$XROOTD_LIB/libXrdPosixPreload.so lar -c .src/pdhdbsmdata/example/protodunehd_dm_decoder_modularfilter.fcl root://eospublic.cern.ch:1094//eos/experiment/neutplatform/protodune/dune/hd-protodune/75/9a/np04hd_raw_run029425_0887_dataflow0_datawriter_0_20241006T161230.hdf5
 ```
 
 where an example protodune file is given.
 
 ## Producers and Filters
+
 The fcl file `protodunehd_dm_decoder_modularfilter.fcl` contains a series of filters and producers that takes a hdf5 file and produces an art::ROOT files whilst removing events that are not of interest. This section of `protodunehd_dm_decoder_modularfilter.fcl` shows how the filters and producers are ordered.
 
-```
+```fcl
   producers:
   {
     # Raw decoding
@@ -126,7 +132,7 @@ The fcl file `protodunehd_dm_decoder_modularfilter.fcl` contains a series of fil
   ]
 ```
 
-The producer modules are referenced in `producers` and the filters in `filters`. The order in which the modules are called and applied to the data is given in `produce`. 
+The producer modules are referenced in `producers` and the filters in `filters`. The order in which the modules are called and applied to the data is given in `produce`.
 
 It can be seen that the filter `filterspillon` is called first. The module is defined in `PDHDSPSSpillFilter_module.cc`. This determines whether the event occurred when the SPS beam spill was ON or OFF. The user can decide if they want a spill ON or spill OFF sample by altering a config parameter.
 
