@@ -77,15 +77,15 @@ bool PDHDSPSSpillFilter::filter(art::Event & evt) {
 
     uint64_t timeHigh_ns = evt.time().timeHigh() * 1e9;
     uint64_t timeLow_ns = evt.time().timeLow();
-    fEventTimeStamp = (timeHigh_ns + timeLow_ns) * 1e-9;
+    fEventTimeStamp = (timeHigh_ns + timeLow_ns) * 1e-6;
 
-    std::cout << "Event " << fEventID << ", Timestamp = " << fEventTimeStamp << " s\n";
+    std::cout << "Event " << fEventID << ", Timestamp = " << fEventTimeStamp << " ms\n";
 
     bool filter_pass = false;
 
     for (size_t spill = 0; spill < vSpillClockPoT.size(); ++spill) {
         if (vSpillClockPoT[spill].first > fEventTimeStamp) {
-            timestamp_t spill_end = vSpillClockPoT[spill - 1].first + 4.785; // 4.785 s is the duration of a spill
+            timestamp_t spill_end = vSpillClockPoT[spill - 1].first + 4785; // 4785 ms is the duration of a spill
             if (fEventTimeStamp < spill_end) {
                 std::cout << "Spill ON\n";
                 filter_pass = fSpillOn;
@@ -131,7 +131,7 @@ void PDHDSPSSpillFilter::beginJob() {
         }
         
         try {
-            timestamp_t clock = static_cast<timestamp_t>(std::stod(data[0])); // Convert the string to a double and then to a timestamp_t
+            timestamp_t clock = static_cast<timestamp_t>(std::stod(data[0])*1e3); // Convert the string in ms to a double and then to a timestamp_t
             uint64_t PoT = static_cast<uint64_t>(std::stoull(data[1])); // Convert the string to an unsigned long long and then to a uint64_t
             if (PoT >= fPoT_threshold) {
                 vSpillClockPoT.push_back(std::make_pair(clock, PoT)); // Store the spill clock time and PoT value

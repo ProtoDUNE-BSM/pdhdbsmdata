@@ -79,7 +79,7 @@ bool PDHDTriggerTypeFilter::filter(art::Event & evt) {
 
   fEventTimeStamp = timeHigh_ns + timeLow_ns;
 
-  std::cout << "Event " << fEventID << ", Timestamp = " << fEventTimeStamp << "ms\n";
+  std::cout << "Event " << fEventID << ", Timestamp = " << fEventTimeStamp << " ms\n";
 
   fEventTimeStamp *= 1e-6;
   std::cout << "Seconds Timestamp = " << fEventTimeStamp << "\n";
