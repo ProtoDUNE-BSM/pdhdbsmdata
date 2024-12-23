@@ -1,13 +1,13 @@
-////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
 //// Class:       PDHDTriggerTypeFilter
 //// Plugin Type: filter (Unknown Unknown)
 //// File:        PDHDTriggerTypeFilter_module.cc
 //// Author:      Ciaran Hasnip (CERN)
 //// Version:     2.0 (2024-12-05) by Ciaran Hasnip (CERN) & Hamza Amar Es-sghir (IFIC-Valencia)
-//// Filter that removes ground shake events by looking for 
-//// Trigger Candidates with type ADCSimpleWindow.
-//// One occurrence of this TC type removes the event.
-//////////////////////////////////////////////////////////////////////////
+//// Description: Filter that removes ground shake events by looking for 
+////              Trigger Candidates with type ADCSimpleWindow.
+////              One occurrence of this TC type removes the event.
+////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <iostream>
 #include <utility>
@@ -53,7 +53,7 @@ class PDHDTriggerTypeFilter : public art::EDFilter {
     bool fDebug;
 };
 
-// Constructor of the class PDHDTrigger
+// Constructor of the class PDHDTriggerTypeFilter
 PDHDTriggerTypeFilter::PDHDTriggerTypeFilter(fhicl::ParameterSet const & pset):
   EDFilter(pset), 
   fInputLabel(pset.get<std::string>("InputTag")),
@@ -79,10 +79,10 @@ bool PDHDTriggerTypeFilter::filter(art::Event & evt) {
 
   fEventTimeStamp = timeHigh_ns + timeLow_ns;
 
-  std::cout << "Event " << fEventID << ", Timestamp = " << fEventTimeStamp << "\n";
+  std::cout << "Event " << fEventID << ", Timestamp = " << fEventTimeStamp << "ms\n";
 
   fEventTimeStamp *= 1e-6;
-  std::cout << "ms Seconds Timestamp = " << fEventTimeStamp << "\n";
+  std::cout << "Seconds Timestamp = " << fEventTimeStamp << "\n";
 
   auto triggerCandidateHandle = evt.getValidHandle<std::vector<dunedaq::trgdataformats::TriggerCandidateData>>(fInputLabel);
   const auto& triggerCandidates = *triggerCandidateHandle;

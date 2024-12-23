@@ -1,13 +1,14 @@
-////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
 //// Class:       PDHDSPSSpillFilter
 //// Plugin Type: filter (Unknown Unknown)
 //// File:        PDHDSPSSpillFilter_module.cc
 //// Author:      Ciaran Hasnip (CERN)
 //// Version:     2.0 (2024-12-05) by Ciaran Hasnip (CERN) & Hamza Amar Es-sghir (IFIC-Valencia)
-//// Filter module designed to read in SPS beam data from a .csv file and
-//// select events that occured when the beam was ON or OFF. 
-//// The user decides if they want on or off spill events.
-//////////////////////////////////////////////////////////////////////////
+//// Description: Filter module designed to read in SPS beam data from a .csv file
+////              and select events that occured when the beam was ON or OFF. 
+////              The user decides if they want ON or OFF spill events, 
+////              as well as the PoT threshold.
+////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <iostream>
 #include <fstream>
@@ -47,8 +48,9 @@ private:
     std::string fSPSBeamData; // Name and path of input csv file for SPS beam data
     std::ifstream fInputData;
     bool fSpillOn; // To filter for spill ON or OFF. It is set to true by default
+    uint64_t fPoT_threshold;
     
-    std::vector<timestamp_t> vSpillClock;
+    std::vector<std::pair<timestamp_t, uint64_t>> vSpillClockPoT; // Vector to store the spill clock times and PoT values
 };
 
 // Constructor of the class PDHDSPSSpillFilter
@@ -56,7 +58,8 @@ PDHDSPSSpillFilter::PDHDSPSSpillFilter(fhicl::ParameterSet const & pset)
     : EDFilter(pset), 
       fInputLabel(pset.get<std::string>("InputTag")), 
       fSPSBeamData(pset.get<std::string>("sps_beamdata")),
-      fSpillOn(pset.get<bool>("spill_on", true)) {}
+      fSpillOn(pset.get<bool>("spill_on", true)),
+      fPoT_threshold(pset.get<uint64_t>("PoT_threshold")){}
 
 // Filter events according to SPS beam spill data
 bool PDHDSPSSpillFilter::filter(art::Event & evt) {
@@ -74,15 +77,15 @@ bool PDHDSPSSpillFilter::filter(art::Event & evt) {
 
     uint64_t timeHigh_ns = evt.time().timeHigh() * 1e9;
     uint64_t timeLow_ns = evt.time().timeLow();
-    fEventTimeStamp = (timeHigh_ns + timeLow_ns) * 1e-6;
+    fEventTimeStamp = (timeHigh_ns + timeLow_ns) * 1e-9;
 
-    std::cout << "Event " << fEventID << ", Timestamp = " << fEventTimeStamp << " ms\n";
+    std::cout << "Event " << fEventID << ", Timestamp = " << fEventTimeStamp << " s\n";
 
     bool filter_pass = false;
 
-    for (size_t spill = 0; spill < vSpillClock.size(); ++spill) {
-        if (vSpillClock[spill] > fEventTimeStamp) {
-            timestamp_t spill_end = vSpillClock[spill - 1] + 4785; // 4785 ms is the duration of a spill
+    for (size_t spill = 0; spill < vSpillClockPoT.size(); ++spill) {
+        if (vSpillClockPoT[spill].first > fEventTimeStamp) {
+            timestamp_t spill_end = vSpillClockPoT[spill - 1].first + 4.785; // 4.785 s is the duration of a spill
             if (fEventTimeStamp < spill_end) {
                 std::cout << "Spill ON\n";
                 filter_pass = fSpillOn;
@@ -98,7 +101,7 @@ bool PDHDSPSSpillFilter::filter(art::Event & evt) {
     return filter_pass;
 }
 
-// Read in the SPS beam data from the .csv file and store the spill clock times (at row.size - 4 column) in a vector
+// Read in the SPS beam data from the .csv file and store the spill clock times and PoT in a vector
 void PDHDSPSSpillFilter::beginJob() {
     std::cout << "SPS beam data file: " << fSPSBeamData << "\n";
     fInputData.open(fSPSBeamData);
@@ -108,28 +111,40 @@ void PDHDSPSSpillFilter::beginJob() {
     }
 
     std::string line;
-    while (std::getline(fInputData, line)) {
-        std::stringstream lineStream(line);
-        std::string cell;
-        std::vector<std::string> row;
-        while (std::getline(lineStream, cell, ',')) {
-            row.push_back(cell);
-        }
-        if (row.size() >= 4) {
-            // timestamp_t clock = static_cast<timestamp_t>(std::stod(row[row.size() - 4]));
-            // vSpillClock.push_back(clock);
-            try {
-                timestamp_t clock = static_cast<timestamp_t>(std::stod(row[row.size() - 4]));
-                vSpillClock.push_back(clock);
-            } catch (const std::invalid_argument& e) {
-                // Handle the case where the string is not a valid double
-            } catch (const std::out_of_range& e) {
-                // Handle the case where the double is out of range
-            }
-        }
+    // Read and discard the header line
+    if (std::getline(fInputData, line)) {
+        // Optionally, you can store the header if needed
+        // std::vector<std::string> header;
+        // std::stringstream headerStream(line);
+        // std::string cell;
+        // while (std::getline(headerStream, cell, ',')) {
+        //     header.push_back(cell);
+        // }
     }
 
-    std::cout << "In " << fSPSBeamData << " there are " << vSpillClock.size() << " SPS beam spills.\n\n";
+    while (std::getline(fInputData, line)) {
+        std::vector<std::string> data;
+        std::stringstream lineStream(line);
+        std::string cell;
+        while (std::getline(lineStream, cell, ',')) {
+            data.push_back(cell);
+        }
+        
+        try {
+            timestamp_t clock = static_cast<timestamp_t>(std::stod(data[0])); // Convert the string to a double and then to a timestamp_t
+            uint64_t PoT = static_cast<uint64_t>(std::stoull(data[1])); // Convert the string to an unsigned long long and then to a uint64_t
+            if (PoT >= fPoT_threshold) {
+                vSpillClockPoT.push_back(std::make_pair(clock, PoT)); // Store the spill clock time and PoT value
+            }
+        } catch (const std::invalid_argument& e) {
+            // Handle the case where the string is not a valid double
+        } catch (const std::out_of_range& e) {
+            // Handle the case where the double is out of range
+        }
+        
+    }
+
+    std::cout << "In " << fSPSBeamData << " there are " << vSpillClockPoT.size() << " SPS beam spills.\n\n";
 }
 
 DEFINE_ART_MODULE(PDHDSPSSpillFilter)

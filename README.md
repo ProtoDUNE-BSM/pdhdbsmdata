@@ -102,7 +102,7 @@ where an example protodune file is given.
 
 ## Producers and Filters
 
-The fcl file `protodunehd_dm_decoder_modularfilter.fcl` contains a series of filters and producers that takes a hdf5 file and produces an art::ROOT files whilst removing events that are not of interest. This section of `protodunehd_dm_decoder_modularfilter.fcl` shows how the filters and producers are ordered.
+The fcl file `protodunehd_dm_decoder_modularfilter.fcl` contains a series of filters and producers that takes a hdf5 file and produces `art::ROOT` files whilst removing events that are not of interest. This section of `protodunehd_dm_decoder_modularfilter.fcl` shows how the filters and producers are ordered.
 
 ```fcl
   producers:
@@ -134,7 +134,7 @@ The fcl file `protodunehd_dm_decoder_modularfilter.fcl` contains a series of fil
 
 The producer modules are referenced in `producers` and the filters in `filters`. The order in which the modules are called and applied to the data is given in `produce`.
 
-It can be seen that the filter `filterspillon` is called first. The module is defined in `PDHDSPSSpillFilter_module.cc`. This determines whether the event occurred when the SPS beam spill was ON or OFF. The user can decide if they want a spill ON or spill OFF sample by altering a config parameter.
+It can be seen that the filter `filterspillon` is called first. The module is defined in `PDHDSPSSpillFilter_module.cc`. This determines whether the event occurred when the SPS beam spill was ON or OFF. The user can decide if they want a spill ON or spill OFF sample by altering a config parameter. Also, the option to remove events by using the PoT (Protons on Target) threshold is now available ($1 \times 10^{12}$).
 
 The second filter, `triggertypefilter`, comes after trigger decoder. The module is defined in `PDHDTriggerTypeFilter_module.cc`. This uses the trigger information to determine whether the event was a ground shake type, in which case the event is removed.
 
