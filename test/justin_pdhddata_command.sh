@@ -15,13 +15,17 @@ MQL_QUERY="files from dune:all where core.runs in (29424) and core.run_type=hd-p
 
 echo "Setting INPUT_TAR_DIR_LOCAL = $INPUT_TAR_DIR_LOCAL"
 
-justin simple-workflow --mql "${MQL_QUERY}" \
+#justin simple-workflow --mql "${MQL_QUERY}" \
+#  --env INPUT_TAR_DIR_LOCAL="$INPUT_TAR_DIR_LOCAL" \
+#  --jobscript ${WORKDIR}/srcs/pdhdbsmdata/test/submit_pdhdbsm_jobscript.jobscript \
+#  --rss-mb 8000 --env NUM_EVENTS=1 \
+#  --scope usertests --lifetime-days 1 \
+#  --output-pattern "*_pdhdreco2_*.root:${FNALURL}/${USERF}"
+
+justin-test-jobscript --mql "${MQL_QUERY}" \
   --env INPUT_TAR_DIR_LOCAL="$INPUT_TAR_DIR_LOCAL" \
   --jobscript ${WORKDIR}/srcs/pdhdbsmdata/test/submit_pdhdbsm_jobscript.jobscript \
-  --rss-mb 8000 --env NUM_EVENTS=1 \
-  --scope usertests --lifetime-days 1 \
-  --output-pattern "*_pdhdreco2_*.root:${FNALURL}/${USERF}"
-
+  --env NUM_EVENTS=1 \
 #justin-test-jobscript \
 #  --mql ${MQL_QUERY} \
 #  --jobscript ${WORKDIR}/srcs/pdhdbsmdata/test/submit_pdhdbsm_jobscript.jobscript \

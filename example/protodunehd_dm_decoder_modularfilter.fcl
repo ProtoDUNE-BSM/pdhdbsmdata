@@ -21,7 +21,7 @@ services:
   message:              @local::dune_message_services_prod
   FileCatalogMetadata:  @local::art_file_catalog_data
   ChannelStatusService: @local::dunefd_channel_status
-  ExptGeoHelperInterface:       @local::dune_geometry_helper
+  WireReadout:          @local::dune_wire_readout 
   GeometryConfigurationWriter:  {}
   Geometry:                     @local::protodunehdv6_geo
   DetectorClocksService:        @local::protodunehd_detectorclocks
@@ -99,7 +99,7 @@ outputs:
 source: @local::hdf5rawinput3
 
 # Alter the .csv file for the IFBeam SPS spill data
-physics.filters.filterspillon.sps_beamdata: "../../sps_data/spillrun029425.csv"
+physics.filters.filterspillon.sps_beamdata: "${MRB_SOURCE}/pdhdbsmdata/sps_data/spillrun029425.csv"
 physics.filters.extmuonfilter.fUpstreamVetoChannels: 40
 
 physics.producers.tpcrawdecoder.DecoderToolParams: @local::PDHDDataInterfaceWIBEth3Defaults

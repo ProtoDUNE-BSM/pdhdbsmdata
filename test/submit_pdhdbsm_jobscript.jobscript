@@ -50,8 +50,9 @@ pfn=`echo $did_pfn_rse | cut -f2 -d' '`
 echo "Input PFN = $pfn"
 
 FCL_FILE="${INPUT_TAR_DIR_LOCAL}/protodunedm_mc_simulation/srcs/pdhdbsmdata/example/protodunehd_dm_decoder_modularfilter.fcl"
-#export DUNE_VERSION=v10_01_03d00
-export DUNE_VERSION=v10_01_04d00
+export DUNE_VERSION=v10_01_03d00
+#export DUNE_VERSION=v10_01_04d00
+#export DUNE_VERSION=v09_81_00d02
 export DUNE_QUALIFIER="e26:prof"
 
 echo "INPUT_TAR_DIR_LOCAL = $INPUT_TAR_DIR_LOCAL"
@@ -61,7 +62,7 @@ echo "FCL_FILE = $FCL_FILE"
 # Setup DUNE environment
 source /cvmfs/dune.opensciencegrid.org/products/dune/setup_dune.sh
 #export PRODUCTS="${INPUT_TAR_DIR_LOCAL}/protodunedm_mc_simulation/localProducts_larsoft_v10_01_03_e26_prof:$PRODUCTS"
-export PRODUCTS="${INPUT_TAR_DIR_LOCAL}/protodunedm_mc_simulation/localProducts_larsoft_v10_01_03_e26_prof"
+export LOCALPRODUCTS="${INPUT_TAR_DIR_LOCAL}/protodunedm_mc_simulation/localProducts_larsoft_v10_01_03_e26_prof"
 # Then we can set up our local products
 #setup duneana "$DUNE_VERSION" -q "$DUNE_QUALIFIER"
 echo "ups list -aK+ dunesw"
@@ -70,7 +71,7 @@ echo "SETUP: setup dunesw $DUNE_VERSION -q $DUNE_QUALIFIER"
 setup dunesw $DUNE_VERSION -q $DUNE_QUALIFIER
 
 #source ${INPUT_TAR_DIR_LOCAL}/protodunedm_mc_simulation/${LOCALPROD}/setup_grid
-source ${PRODUCTS}/setup_grid
+source ${LOCALPRODUCTS}/setup_grid
 mrbslp
 
 echo "INPUT_TAR_DIR_LOCAL = $INPUT_TAR_DIR_LOCAL"
