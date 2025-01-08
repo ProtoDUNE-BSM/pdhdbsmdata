@@ -73,6 +73,7 @@ physics:
     triggertypefilter,
     tpcrawdecoder,
     timingrawdecoder,
+    #pdhddaphne,
     #extmuonfilter,
     vertexfilter
     # Don't run pdhddaphne in this version of dunesw as there is an issue
@@ -100,7 +101,7 @@ outputs:
 source: @local::hdf5rawinput3
 
 # Alter the .csv file for the IFBeam SPS spill data
-physics.filters.filterspillon.sps_beamdata: "./srcs/pdhdbsmdata/sps_data/SPSIFBeam_Run29424_Run29425_Oct4_6.csv"
+physics.filters.filterspillon.sps_beamdata: "../../sps_data/spillrun029425.csv"
 physics.filters.extmuonfilter.fUpstreamVetoChannels: 40
 
 physics.producers.tpcrawdecoder.DecoderToolParams: @local::PDHDDataInterfaceWIBEth3Defaults
