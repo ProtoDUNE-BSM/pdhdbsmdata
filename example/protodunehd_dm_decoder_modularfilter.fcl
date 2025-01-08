@@ -73,7 +73,6 @@ physics:
     triggertypefilter,
     tpcrawdecoder,
     timingrawdecoder,
-    #extmuonfilter,
     vertexfilter
     # Don't run pdhddaphne in this version of dunesw as there is an issue
   ]
