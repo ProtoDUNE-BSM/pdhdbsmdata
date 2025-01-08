@@ -50,7 +50,8 @@ pfn=`echo $did_pfn_rse | cut -f2 -d' '`
 echo "Input PFN = $pfn"
 
 FCL_FILE="${INPUT_TAR_DIR_LOCAL}/protodunedm_mc_simulation/srcs/pdhdbsmdata/example/protodunehd_dm_decoder_modularfilter.fcl"
-export DUNE_VERSION=v10_01_03d00
+#export DUNE_VERSION=v10_01_03d00
+export DUNE_VERSION=v10_01_04d00
 export DUNE_QUALIFIER="e26:prof"
 
 echo "INPUT_TAR_DIR_LOCAL = $INPUT_TAR_DIR_LOCAL"
