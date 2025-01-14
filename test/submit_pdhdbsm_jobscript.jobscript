@@ -1,46 +1,41 @@
 #!/bin/bash
 :<<'EOF'
 
-To use this jobscript to process 5 files from the dataset fardet-hd__fd_mc_2023a_reco2__full-reconstructed__v09_81_00d02__standard_reco2_dune10kt_nu_1x2x6__prodgenie_nu_dune10kt_1x2x6__out1__validation
-data and put the output in the $USER namespace (MetaCat) and saves the output in /scratch
-Use this command to create the workflow:
+Job submission script for justin workflow. Processes NP04 data through to reconstruction
 
-justin simple-workflow \
---mql \
-"files from fardet-hd:fardet-hd__fd_mc_2023a__hit-reconstructed__v09_78_01d01__standard_reco1_dune10kt_1x2x6__prodgenie_nu_dune10kt_1x2x6__out1__v1_official limit 5  ordered"\
---jobscript submit_ana.jobscript --rss-mb 4000 \
---scope higuera --output-pattern '*_myreco2_*.root:$FNALURL/$USERF' 
+WORKDIR=${PWD}
+USERF=${USER}/ProtoDUNEBSM/PDHDBSMData
+FNALURL='https://fndcadoor.fnal.gov:2880/dune/scratch/users'
+MQL_QUERY="files from dune:all where core.runs in (29424) and core.run_type=hd-protodune and core.data_tier=raw and core.file_type=detector limit 1"
+
+justin simple-workflow --mql "${MQL_QUERY}" \
+  --env INPUT_TAR_DIR_LOCAL="$INPUT_TAR_DIR_LOCAL" \
+  --jobscript ${WORKDIR}/srcs/pdhdbsmdata/test/submit_pdhdbsm_jobscript.jobscript \
+  --rss-mb 8000 --env NUM_EVENTS=1 \
+  --scope usertests --lifetime-days 1 \
+  --output-pattern "*_pdhdreco2_*.root:${FNALURL}/${USERF}"
 
 The following optional environment variables can be set when creating the
-workflow/stage: FCL_FILE, NUM_EVENTS, DUNE_VERSION, DUNE_QUALIFIER 
+workflow/stage: FCL_DECODE, NUM_EVENTS, DUNE_VERSION, DUNE_QUALIFIER 
 
 EOF
 
 # fcl file and DUNE software version/qualifier to be used
-#FCL_FILE=${FCL_FILE:-$INPUT_TAR_DIR_LOCAL/protodunedm_mc_simulation/srcs/pdhdbsmdata/example/protodunehd_dm_decoder_modularfilter.fcl}
-#DUNE_VERSION=${DUNE_VERSION:-v10_01_03d00}
-#DUNE_QUALIFIER=${DUNE_QUALIFIER:-e26:prof}
-
-#FCL_FILE="${INPUT_TAR_DIR_LOCAL}/protodunedm_mc_simulation/srcs/pdhdbsmdata/example/protodunehd_dm_decoder_modularfilter.fcl"
-#export DUNE_VERSION=v10_01_03d00
-#export DUNE_QUALIFIER="e26:prof"
-
-#echo "INPUT_TAR_DIR_LOCAL = $INPUT_TAR_DIR_LOCAL"
-#ls $INPUT_TAR_DIR_LOCAL
-#echo "FCL_FILE = $FCL_FILE"
 
 # number of events to process from the input file
 if [ "$NUM_EVENTS" != "" ] ; then
-   events_option="-n $NUM_EVENTS"
-   fi
+  events_option="-n $NUM_EVENTS"
+fi
+
+SPS_DATA="${SPS_DATA:-spillrun029425.csv}"
 
 # First get an unprocessed file from this stage
 did_pfn_rse=`$JUSTIN_PATH/justin-get-file`
 
 if [ "$did_pfn_rse" = "" ] ; then
-    echo "Nothing to process - exit jobscript"
-      exit 0
-      fi
+  echo "Nothing to process - exit jobscript"
+  exit 0
+fi
 
 # Keep a record of all input DIDs, for pdjson2meta file -> DID mapping
 echo "$did_pfn_rse" | cut -f1 -d' ' >>all-input-dids.txt
@@ -49,34 +44,28 @@ echo "$did_pfn_rse" | cut -f1 -d' ' >>all-input-dids.txt
 pfn=`echo $did_pfn_rse | cut -f2 -d' '`
 echo "Input PFN = $pfn"
 
-FCL_FILE="${INPUT_TAR_DIR_LOCAL}/protodunedm_mc_simulation/srcs/pdhdbsmdata/example/protodunehd_dm_decoder_modularfilter.fcl"
-export DUNE_VERSION=v10_01_03d00
-#export DUNE_VERSION=v10_01_04d00
-#export DUNE_VERSION=v09_81_00d02
+FCL_FILE="${INPUT_TAR_DIR_LOCAL}/protodunedm/srcs/pdhdbsmdata/example/run_master_np04data_processor.fcl"
+FCL_DECODE="${INPUT_TAR_DIR_LOCAL}/protodunedm/srcs/pdhdbsmdata/example/protodunehd_dm_decoder_modularfilter.fcl"
+FCL_HITFIND="${INPUT_TAR_DIR_LOCAL}/protodunedm/srcs/pdhdbsmdata/example/runUpToHitFinding.fcl"
+FCL_RECO="${INPUT_TAR_DIR_LOCAL}/protodunedm/srcs/pdhdbsmdata/example/runPandoraNeutrino.fcl"
+export DUNE_VERSION=v10_01_04d00
 export DUNE_QUALIFIER="e26:prof"
 
 echo "INPUT_TAR_DIR_LOCAL = $INPUT_TAR_DIR_LOCAL"
-ls $INPUT_TAR_DIR_LOCAL
-echo "FCL_FILE = $FCL_FILE"
+echo "FCL_DECODE = $FCL_DECODE"
 
 # Setup DUNE environment
 source /cvmfs/dune.opensciencegrid.org/products/dune/setup_dune.sh
-#export PRODUCTS="${INPUT_TAR_DIR_LOCAL}/protodunedm_mc_simulation/localProducts_larsoft_v10_01_03_e26_prof:$PRODUCTS"
-export LOCALPRODUCTS="${INPUT_TAR_DIR_LOCAL}/protodunedm_mc_simulation/localProducts_larsoft_v10_01_03_e26_prof"
+export LOCALPRODUCTS="${INPUT_TAR_DIR_LOCAL}/protodunedm/localProducts_larsoft_v10_01_04d00_e26_prof"
 # Then we can set up our local products
-#setup duneana "$DUNE_VERSION" -q "$DUNE_QUALIFIER"
-echo "ups list -aK+ dunesw"
-ups list -aK+ dunesw
 echo "SETUP: setup dunesw $DUNE_VERSION -q $DUNE_QUALIFIER"
 setup dunesw $DUNE_VERSION -q $DUNE_QUALIFIER
 
-#source ${INPUT_TAR_DIR_LOCAL}/protodunedm_mc_simulation/${LOCALPROD}/setup_grid
 source ${LOCALPRODUCTS}/setup_grid
 mrbslp
 
-echo "INPUT_TAR_DIR_LOCAL = $INPUT_TAR_DIR_LOCAL"
-ls $INPUT_TAR_DIR_LOCAL
-echo "FCL_FILE = $FCL_FILE"
+# place spill data files somewhere where they cn be found
+cp ${MRB_SOURCE}/pdhdbsmdata/sps_data/${SPS_DATA} ./
 
 # Construct outFile from input $pfn 
 now=$(date -u +"%Y-%m-%dT_%H%M%SZ")
@@ -91,8 +80,12 @@ campaign="justIN.w${JUSTIN_WORKFLOW_ID}s${JUSTIN_STAGE_ID}"
 # Do the scary preload stuff in a subshell!
 export LD_PRELOAD=${XROOTD_LIB}/libXrdPosixPreload.so
 echo "$LD_PRELOAD"
-lar -c $FCL_FILE -o $outFile -s "$pfn" > ${fname}_pdhdbsm_${now}.log 2>&1 
+lar -c $FCL_FILE ${events_option} -o $outFile -s "$pfn" > ${fname}_pdhdbsm_${now}.log 2>&1 
 
+# try a single master fcl file
+#lar -c $FCL_DECODE ${events_option} -o $outFile -s "$pfn" > ${fname}_pdhdbsm_${now}.log 2>&1 
+#lar -c $FCL_HITFIND -o $outFile -s "$pfn" > ${fname}_pdhdbsm_${now}.log 2>&1 
+#lar -c $FCL_RECO  -o $outFile -s "$pfn" > ${fname}_pdhdbsm_${now}.log 2>&1 
 )
 
 echo '=== Start last 100 lines of lar log file ==='
@@ -104,13 +97,13 @@ larExit=$?
 echo "lar exit code $larExit"
 
 if [ $larExit -eq 0 ] ; then
-    # Success !
-      echo "$pfn" > justin-processed-pfns.txt
-        jobscriptExit=0
-        else
-            # Oh :(
-              jobscriptExit=1
-              fi
+  # Success !
+  echo "$pfn" > justin-processed-pfns.txt
+  jobscriptExit=0
+else
+  # Oh :(
+  jobscriptExit=1
+fi
 
 # Create compressed tar file with all log files 
 tar zcf `echo "$JUSTIN_JOBSUB_ID.logs.tgz" | sed 's/@/_/g'` *.log
