@@ -23,7 +23,7 @@ And this command when on lxplus (they are the same command), just different dire
 You need to set up LArSoft, dunesw, pull the code from GitHub and create your development area. Follow this script:
 
 ```bash
-VERSION=v10_01_03d00
+VERSION=v10_01_04d00
 QUALS=e26:prof
 DIRECTORY=protodunedm_data_analysis
 export WORKDIR=/exp/dune/app/users/$USER/ # or on lxplus /afs/cern.ch/work/c/${USER}/public/
@@ -54,7 +54,7 @@ mrbslp
 Once the development area has been created you can set up the environment withe following script:
 
 ```bash
-VERSION=v10_01_03d00
+VERSION=v10_01_04d00
 QUALS=e26:prof
 
 source /cvmfs/dune.opensciencegrid.org/products/dune/setup_dune.sh
@@ -64,6 +64,27 @@ echo $DUNESW_DIR
 source localProducts_*/setup
 mrbslp
 ```
+
+## Running Data Processing with justIN
+
+JustIN is the most up-to-date way of submitting and managing jobs for DUNE. There are scripts in the `test` directory that allow you to submit justIN jobs. To setup justIN run
+
+```bash
+make the tarball and upload it to cvmfs by running:
+setup justin
+justin time
+source srcs/pdhdbsmdata/test/tarball_protodunedm.sh
+htgettoken -a htvaultprod.fnal.gov -i dune
+INPUT_TAR_DIR_LOCAL=`justin-cvmfs-upload LocalProdNeutrinoNP04.Blob.tar.gz`
+```
+
+These commands will setup justIN, create a tarball and send that tarball to cvmfs to be read by the job. Make sure you have setup your grid certificates first:
+```bash
+kinit -f $USER
+kx509
+voms-proxy-init --noregen -rfc -voms dune:/dune/Role=Analysis
+```
+An example of a justIN command you can run is held in `test/justin_pdhddata_command.sh`. This command takes a metacat query for the data you want to process. The script runs the justIN job script `test/submit_pdhdbsm_jobscript.jobscript` 
 
 ## Certificates and Finding Files
 
