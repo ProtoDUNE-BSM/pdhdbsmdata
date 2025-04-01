@@ -52,7 +52,6 @@ export DUNE_VERSION=v10_01_04d00
 export DUNE_QUALIFIER="e26:prof"
 
 echo "INPUT_TAR_DIR_LOCAL = $INPUT_TAR_DIR_LOCAL"
-echo "FCL_DECODE = $FCL_DECODE"
 
 # Setup DUNE environment
 source /cvmfs/dune.opensciencegrid.org/products/dune/setup_dune.sh
@@ -64,8 +63,13 @@ setup dunesw $DUNE_VERSION -q $DUNE_QUALIFIER
 source ${LOCALPRODUCTS}/setup_grid
 mrbslp
 
+# Needed to edit electronics gain to be 7.8 instead of 14 mV/fC
+export WIRECELL_PATH=$MRB_SOURCE/pdhdbsmdata/wire-cell-cfg:$WIRECELL_PATH
+echo ${WIRECELL_PATH} 
+
 # place spill data files somewhere where they cn be found
 cp ${MRB_SOURCE}/pdhdbsmdata/sps_data/${SPS_DATA} ./
+#sed -i "s|^\(\s*.*\.sps_beamdata:\s*\).*|\1\"${SPS_DATA}\"|" "$FCL_FILE"
 
 # Construct outFile from input $pfn 
 now=$(date -u +"%Y-%m-%dT_%H%M%SZ")
@@ -81,11 +85,6 @@ campaign="justIN.w${JUSTIN_WORKFLOW_ID}s${JUSTIN_STAGE_ID}"
 export LD_PRELOAD=${XROOTD_LIB}/libXrdPosixPreload.so
 echo "$LD_PRELOAD"
 lar -c $FCL_FILE ${events_option} -o $outFile -s "$pfn" > ${fname}_pdhdbsm_${now}.log 2>&1 
-
-# try a single master fcl file
-#lar -c $FCL_DECODE ${events_option} -o $outFile -s "$pfn" > ${fname}_pdhdbsm_${now}.log 2>&1 
-#lar -c $FCL_HITFIND -o $outFile -s "$pfn" > ${fname}_pdhdbsm_${now}.log 2>&1 
-#lar -c $FCL_RECO  -o $outFile -s "$pfn" > ${fname}_pdhdbsm_${now}.log 2>&1 
 )
 
 echo '=== Start last 100 lines of lar log file ==='

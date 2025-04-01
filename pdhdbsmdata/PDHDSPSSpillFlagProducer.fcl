@@ -1,0 +1,11 @@
+BEGIN_PROLOG
+
+pdhd_spillflag: {
+  module_type: "PDHDSPSSpillFlagProducer"
+  OutputTag: "sps"
+  PoT_threshold: 1e12
+  sps_beamdata: "./srcs/pdhdbsmdata/sps_data/spillrun029425.csv"
+  verbose: true
+}
+
+END_PROLOG

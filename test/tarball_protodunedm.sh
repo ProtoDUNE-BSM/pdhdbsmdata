@@ -14,7 +14,6 @@ mkdir tar_state; cd tar_state
 mkdir protodunedm
 cp -r ${LOCALPRODDIR} ./protodunedm/
 mkdir protodunedm/srcs
-#cp -r ${DMWORKDIR}/srcs/pdhdbsmsimulation ./protodunedm/srcs
 cp -r ${DMWORKDIR}/srcs/pdhdbsmdata ./protodunedm/srcs
 
 tar --exclude '.git' -zcvf LocalProdNeutrinoNP04.Blob.tar.gz ./*

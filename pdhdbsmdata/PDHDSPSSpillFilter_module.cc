@@ -45,10 +45,12 @@ private:
     uint64_t fEventTimeStamp; // Timestamp from art::Event object
 
     std::string fInputLabel;
+    std::string fSpillLabel;
     std::string fSPSBeamData; // Name and path of input csv file for SPS beam data
     std::ifstream fInputData;
     bool fSpillOn; // To filter for spill ON or OFF. It is set to true by default
     uint64_t fPoT_threshold;
+    bool fUseSpillFlag;
     
     std::vector<std::pair<timestamp_t, uint64_t>> vSpillClockPoT; // Vector to store the spill clock times and PoT values
 };
@@ -57,9 +59,11 @@ private:
 PDHDSPSSpillFilter::PDHDSPSSpillFilter(fhicl::ParameterSet const & pset)
     : EDFilter(pset), 
       fInputLabel(pset.get<std::string>("InputTag")), 
+      fSpillLabel(pset.get<std::string>("SpillTag")), 
       fSPSBeamData(pset.get<std::string>("sps_beamdata")),
       fSpillOn(pset.get<bool>("spill_on", true)),
-      fPoT_threshold(pset.get<uint64_t>("PoT_threshold")){}
+      fPoT_threshold(pset.get<uint64_t>("PoT_threshold")),
+      fUseSpillFlag(pset.get<bool>("useSpillFlag", false)) {}
 
 // Filter events according to SPS beam spill data
 bool PDHDSPSSpillFilter::filter(art::Event & evt) {
@@ -75,28 +79,43 @@ bool PDHDSPSSpillFilter::filter(art::Event & evt) {
     std::cout << "###PDHDSPSSpillFilter###\n"
               << "START PDHDSPSSpillFilter for Event " << fEventID << " in Run " << fRun << "\n\n";
 
-    uint64_t timeHigh_ns = evt.time().timeHigh() * 1e9;
-    uint64_t timeLow_ns = evt.time().timeLow();
-    fEventTimeStamp = (timeHigh_ns + timeLow_ns) * 1e-6;
-
-    std::cout << "Event " << fEventID << ", Timestamp = " << fEventTimeStamp << " ms\n";
-
+    // If there is no spill flag product always do the manual spill filtering
+    art::Handle<std::vector<bool>> spillHandle;
+    if (!evt.getByLabel(fSpillLabel, spillHandle)) fUseSpillFlag = false;
+    
     bool filter_pass = false;
+    
+    if (!fUseSpillFlag) {
+      uint64_t timeHigh_ns = evt.time().timeHigh() * 1e9;
+      uint64_t timeLow_ns = evt.time().timeLow();
+      fEventTimeStamp = (timeHigh_ns + timeLow_ns) * 1e-6;
 
-    for (size_t spill = 0; spill < vSpillClockPoT.size(); ++spill) {
-        if (vSpillClockPoT[spill].first > fEventTimeStamp) {
-            timestamp_t spill_end = vSpillClockPoT[spill - 1].first + 4785; // 4785 ms is the duration of a spill
-            if (fEventTimeStamp < spill_end) {
+      std::cout << "Event " << fEventID << ", Timestamp = " << fEventTimeStamp << " ms\n";
+
+      for (size_t spill = 0; spill < vSpillClockPoT.size(); ++spill) {
+          if (vSpillClockPoT[spill].first > fEventTimeStamp) {
+              timestamp_t spill_end = vSpillClockPoT[spill - 1].first + 4785; // 4785 ms is the duration of a spill
+              if (fEventTimeStamp < spill_end) {
                 std::cout << "Spill ON\n";
                 filter_pass = fSpillOn;
-            } else {
+              } else {
                 std::cout << "Spill OFF\n";
                 filter_pass = !fSpillOn;
-            }
-            break;
+              }
+              break;
+          }
+      }
+    } else {
+        for (auto const& spill : (*spillHandle)) { // should only have 1 element
+            filter_pass = spill;
         }
     }
 
+    std::string spill_string;
+    if (filter_pass) spill_string = "ON";
+    else spill_string = "OFF";
+
+    std::cout << ">>> Spill is " << spill_string << std::endl;
     std::cout << "END PDHDSPSSpillFilter for Event " << fEventID << " in Run " << fRun << "\n\n";
     return filter_pass;
 }

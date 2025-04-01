@@ -6,6 +6,7 @@
 #include "DAPHNEReaderPDHD.fcl"
 
 #include "PDHDSPSSpillFilter.fcl"
+#include "PDHDSPSSpillFlagProducer.fcl"
 #include "PDHDTriggerTypeFilter.fcl"
 #include "PDHDExtMuonFilter.fcl"
 #include "PDHDVertexFilter.fcl"
@@ -84,6 +85,7 @@ physics:
   filters:
   {
     filterspillon: @local::pdhdfilter_spillon
+    filterspilloff: @local::pdhdfilter_spilloff
     triggertypefilter: @local::pdhdtriggertypefilter
     extmuonfilter: @local::pdhdextmuonfilter
     vertexfilter: @local::pdhdvertexfilter
@@ -93,6 +95,9 @@ physics:
 
   producers:
   {
+    # Add spill flag to art event
+    spillflag: @local::pdhd_spillflag
+
     # Raw decoding
     tpcrawdecoder: @local::PDHDTPCReaderDefaults
     triggerrawdecoder: @local::PDHDTriggerReader3Defaults 
@@ -142,17 +147,17 @@ physics:
   }
 
   produce: [
-    filterspillon,
+    #filterspillon,
+    spillflag, # now add a producer for spill on/off
     triggerrawdecoder,
     triggertypefilter,
     tpcrawdecoder,
     timingrawdecoder,
-    vertexfilter,
-    #pdhddaphne, # not running daphne as not figured out light yet
+      # pdhddaphne, # not running daphne as not figured out light yet
     fembfilter,
     wclsdatahd,
     gaushit,
-    nhitsfilter,
+    #nhitsfilter,
     reco3d,
     hitpdune,
     pandora, 
@@ -202,8 +207,8 @@ source:
 ##Check this
 source: @local::hdf5rawinput3
 # Alter the .csv file for the IFBeam SPS spill data
-physics.filters.filterspillon.sps_beamdata: "spillrun029425.csv"
-physics.filters.extmuonfilter.fUpstreamVetoChannels: 40
+#physics.filters.filterspillon.sps_beamdata: "spillrun031036.csv"
+physics.producers.spillflag.sps_beamdata: "spillrun029425.csv"
 physics.producers.tpcrawdecoder.DecoderToolParams: @local::PDHDDataInterfaceWIBEth3Defaults
 physics.producers.pdhddaphne.DAPHNEInterface: { tool_type: "DAPHNEInterface2" }
 physics.producers.opdec.InputModule: "pdhddaphne"

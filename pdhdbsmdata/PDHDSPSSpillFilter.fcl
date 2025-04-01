@@ -5,7 +5,9 @@ pdhdfilter_spillon: {
   spill_on: true
   PoT_threshold: 1e12
   InputTag: "triggerrawdecoder:daq"
+  SpillTag: "spillflag:sps"
   sps_beamdata: "./srcs/pdhdbsmdata/sps_data/spillrun029425.csv"
+  useSpillFlag: true
 }
 
 pdhdfilter_spilloff: @local::pdhdfilter_spillon

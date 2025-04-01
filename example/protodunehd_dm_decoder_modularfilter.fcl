@@ -45,6 +45,7 @@ services:
   {
     FileName: "PD2HDChannelMap_WIBEth_electronics_v1.txt"
   }
+  
 }
 
 
@@ -68,12 +69,12 @@ physics:
   }
 
   produce: [
-    filterspillon,
+    filterspillon
     triggerrawdecoder,
     triggertypefilter,
     tpcrawdecoder,
     timingrawdecoder,
-    vertexfilter
+    #vertexfilter
     # Don't run pdhddaphne in this version of dunesw as there is an issue
   ]
 
@@ -96,10 +97,18 @@ outputs:
   }
   
 }
+
 source: @local::hdf5rawinput3
+#source:
+#{
+#  module_type: RootInput
+#  maxEvents: -1        # Number of events to create
+#  saveMemoryObjectThreshold: 0
+#}
 
 # Alter the .csv file for the IFBeam SPS spill data
-physics.filters.filterspillon.sps_beamdata: "spillrun029425.csv"
+physics.filters.filterspillon.sps_beamdata: "./srcs/pdhdbsmdata/sps_data/spillrun029425.csv"
+physics.filters.filterspillon.useSpillFlag: true
 physics.filters.extmuonfilter.fUpstreamVetoChannels: 40
 
 physics.producers.tpcrawdecoder.DecoderToolParams: @local::PDHDDataInterfaceWIBEth3Defaults

@@ -51,13 +51,15 @@ class PDHDTriggerTypeFilter : public art::EDFilter {
 
     std::string fInputLabel;
     bool fDebug;
+    bool fVerbose;
 };
 
 // Constructor of the class PDHDTriggerTypeFilter
-PDHDTriggerTypeFilter::PDHDTriggerTypeFilter(fhicl::ParameterSet const & pset):
-  EDFilter(pset), 
-  fInputLabel(pset.get<std::string>("InputTag")),
-  fDebug(pset.get<bool>("Debug")) {}
+PDHDTriggerTypeFilter::PDHDTriggerTypeFilter(fhicl::ParameterSet const & pset)
+  : EDFilter(pset) 
+  , fInputLabel(pset.get<std::string>("InputTag"))
+  , fDebug(pset.get<bool>("Debug"))
+  , fVerbose(pset.get<bool>("verbose", true)) {}
 
 // Filter function
 bool PDHDTriggerTypeFilter::filter(art::Event & evt) {
@@ -71,39 +73,41 @@ bool PDHDTriggerTypeFilter::filter(art::Event & evt) {
   fSubRun = evt.subRun();
   fEventID = evt.id().event();
   
-  std::cout << "###PDHDTriggerTypeFilter###\n"
+  if (fVerbose) 
+    std::cout << "###PDHDTriggerTypeFilter###\n" 
     << "START PDHDTriggerTypeFilter for Event " << fEventID << " in Run " << fRun << "\n\n";
 
-  uint64_t timeHigh_ns = evt.time().timeHigh()*1e9;
-  uint64_t timeLow_ns = evt.time().timeLow();
-
-  fEventTimeStamp = timeHigh_ns + timeLow_ns;
-
-  std::cout << "Event " << fEventID << ", Timestamp = " << fEventTimeStamp << " ms\n";
-
-  fEventTimeStamp *= 1e-6;
-  std::cout << "Seconds Timestamp = " << fEventTimeStamp << "\n";
+  if (fDebug) {
+    uint64_t timeHigh_ns = evt.time().timeHigh()*1e9;
+    uint64_t timeLow_ns = evt.time().timeLow();
+    fEventTimeStamp = timeHigh_ns + timeLow_ns;
+    fEventTimeStamp *= 1e-6;
+    std::cout << "Seconds Timestamp = " << fEventTimeStamp << "\n";
+  }
 
   auto triggerCandidateHandle = evt.getValidHandle<std::vector<dunedaq::trgdataformats::TriggerCandidateData>>(fInputLabel);
   const auto& triggerCandidates = *triggerCandidateHandle;
 
   for (const auto &tc : triggerCandidates) {
-    //timestamp_t trigger_time_ms = tc.time_start * 16e-6; // 16e-9 s * 1e3 time_start is the time of the first sample in the window
-    timestamp_t trigger_time_ms = tc.time_end * 16e-6; // 16e-9 s * 1e3 time_end is the time of the last sample in the window
-    std::cout << "Event " << fEventID << ", Timestamp = " << fEventTimeStamp << ", TC time = " << trigger_time_ms << "\n";
-    if (fDebug && fEventTimeStamp != trigger_time_ms) {
-      std::cout << "[WARNING] art::Event timestamp and TC timestamp do not match. Investigate!\n";
+    if (fDebug) {
+      timestamp_t trigger_time_ms = tc.time_end * 16e-6; // 16e-9 s * 1e3 time_end is the time of the last sample in the window
+      std::cout << "Event " << fEventID << ", Timestamp = " << fEventTimeStamp << ", TC time = " << trigger_time_ms << "\n";
+      if (fEventTimeStamp != trigger_time_ms) {
+        std::cout << "[WARNING] art::Event timestamp and TC timestamp do not match. Investigate!\n";
+      }
     }
     // Look at the algorithm type
     type_t type_tc = tc.type;
-    std::cout << "Type: " << map_trigger_candidate_type_names[type_tc] << "\n";
+    if (fVerbose) std::cout << "Type: " << map_trigger_candidate_type_names[type_tc] << "\n";
     if (type_tc == type_t::kADCSimpleWindow) {
-      std::cout << "kADCSimpleWindow Trigger Algorithm! Removing ground shake.\n";
+      if (fVerbose) 
+        std::cout << "kADCSimpleWindow Trigger Algorithm! Removing ground shake.\n";
       return false;
     }
   }
   
-  std::cout << "END PDHDTriggerTypeFilter for Event " << fEventID << " in Run " << fRun << "\n\n";
+  if (fVerbose) 
+    std::cout << "END PDHDTriggerTypeFilter for Event " << fEventID << " in Run " << fRun << "\n\n";
 
   // If you made it here then you only had physics triggers
   return true;
