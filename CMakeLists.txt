@@ -16,7 +16,7 @@
 # use cmake 3.12 or later
 cmake_minimum_required (VERSION 3.12)
 
-project(pdhdbsmdata VERSION 10.01.04 LANGUAGES CXX C)
+project(pdhdbsmdata VERSION 10.04.07 LANGUAGES CXX C)
 
 # cetbuildtools contains our cmake modules
 find_package(cetbuildtools REQUIRED)
